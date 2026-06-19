@@ -1,0 +1,10 @@
+/home/jonathan/Coding/Python/dl_using_neural_networks/.devenv/bootstrap/bootstrapLib.nix
+/home/jonathan/Coding/Python/dl_using_neural_networks/.devenv/bootstrap/default.nix
+/home/jonathan/Coding/Python/dl_using_neural_networks/.devenv/bootstrap/resolve-lock.nix
+/home/jonathan/Coding/Python/dl_using_neural_networks/devenv.local.nix
+/home/jonathan/Coding/Python/dl_using_neural_networks/devenv.lock
+/home/jonathan/Coding/Python/dl_using_neural_networks/devenv.nix
+/home/jonathan/Coding/Python/dl_using_neural_networks/devenv.yaml
+/home/jonathan/.config/nixpkgs/overlays
+/home/jonathan/.config/nixpkgs/overlays.nix
+/home/jonathan/Coding/Python/dl_using_neural_networks/.env
