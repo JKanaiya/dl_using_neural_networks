@@ -29,6 +29,7 @@ languages.python = {
       # espeak
       sacrebleu
       rouge-score
+      optuna
       seqeval
       sklearn-compat
       speechrecognition
