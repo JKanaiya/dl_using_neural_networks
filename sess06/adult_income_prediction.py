@@ -265,9 +265,7 @@ def plot_confusion_matrix(
 
 # display the roc curve
 def plot_roc_curve(model: Pipeline, x_test: pd.DataFrame, y_test: pd.Series) -> None:
-    RocCurveDisplay.from_estimator(
-        model, x_test, y_test, cmap="viridis"
-    )  # cmap= "blues"
+    RocCurveDisplay.from_estimator(model, x_test, y_test)  # cmap= "blues"
     plt.title("ROC Curve")
     plt.tight_layout()
     plt.show()
@@ -275,19 +273,19 @@ def plot_roc_curve(model: Pipeline, x_test: pd.DataFrame, y_test: pd.Series) -> 
 
 # plot the 10 most important feautures
 def plot_feature_importance(model: Pipeline) -> None:
-    preprocessor = model.named_steps("preprocessor")
-    classifier = model.named_steps("classifier")
-    feature_names = preprocessor.feature_names_out()
+    preprocessor = model.named_steps["preprocessor"]
+    classifier = model.named_steps["classifier"]
+    feature_names = preprocessor.get_feature_names_out()
     imortance = classifier.feature_importances_
 
-    imoprtance_frame = (
-        pd.DataFrame({"feature": feature_names, "importance": imortance})
-        .sort_values("importance", ascending=False)
+    importance_frame = (
+        pd.DataFrame({"Feature": feature_names, "Importance": imortance})
+        .sort_values("Importance", ascending=False)
         .head(10)
     )
 
     plt.figure(figsize=(10, 8))
-    sns.barplot(data=importance_frame, x="Importance", y="feature", hue="viridis")
+    sns.barplot(data=importance_frame, x="Importance", y="Feature", palette="viridis")
     plt.title("Top Feature Importances")
     plt.tight_layout()
     plt.show()
@@ -296,14 +294,15 @@ def plot_feature_importance(model: Pipeline) -> None:
 # Function to plot baseline and tuned accuracies
 def compare_models(baseline: float, tuned: float) -> None:
 
-    comparison = pd.DataFrame()
-    {
-        "Model Baseline": ["Baseline", "Finetuned"],
-        "Accuracy": [baseline, tuned],
-    }
+    comparison = pd.DataFrame(
+        {
+            "Model": ["Baseline", "Fine Tuned"],
+            "Accuracy": [baseline, tuned],
+        }
+    )
 
     plt.figure(figsize=(7, 5))
-    sns.barplot(data=comparison, x="Model", y="Accuracy", palette="set2")
+    sns.barplot(data=comparison, x="Model", y="Accuracy", palette="Set2")
 
     plt.ylim(0.0, 1.0)
     plt.title("Model Accuracy Comparison")
@@ -524,3 +523,128 @@ def train_fine_tuned(
     )
 
     return tuned
+
+
+def save_model(model: Pipeline, filename: Path = MODEL_FILE) -> None:
+    joblib.dump(model, filename)
+    print(f"\nModel saved to {filename.resolve()}")
+
+
+def display_dataset_information(dataset: pd.DataFrame) -> None:
+
+    print("=" * 60)
+    print("Dataset Overview")
+    print("=" * 60)
+
+    print(f"Number of samples: {len(dataset):,}")
+    print(f"Number of features: {dataset.shape[1] - 1}")
+    print(f"\nFirst five records:\n{dataset.head()}")
+    print("=" * 60)
+
+    print(f"Target distribution:\n{dataset['income'].value_counts()}")
+
+    print(f"Missing Values:{dataset.isna().sum()}")
+
+
+def perform_cross_validation(
+    pipeline: Pipeline, x_train: pd.DataFrame, y_train: pd.Series
+) -> None:
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
+
+    scores = cross_val_score(
+        pipeline, x_train, y_train, cv=cv, scoring="accuracy", n_jobs=1
+    )
+    print("\nCross Validation Accuracy")
+
+    for (
+        index,
+        score,
+    ) in enumerate(scores, start=1):
+        print(f"Fold {index}: {score:.3f}")
+
+    print(f"\nMean Accuracy:{scores.mean():.3f}")
+
+
+def prepare_data() -> Tuple[
+    pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, ColumnTransformer
+]:
+    dataset = generate_dataset()
+
+    display_dataset_information(dataset)
+
+    x, y = split_features_target(dataset)
+
+    preprocessor = build_preprocessor(x)
+
+    x_train, x_test, y_train, y_test = train_test_split(
+        x, y, random_state=RANDOM_STATE, test_size=0.2, stratify=y
+    )
+
+    return x_train, x_test, y_train, y_test, preprocessor
+
+
+# -----------------------------------------------------------------------------
+# 3. Main Function Exectution
+# -----------------------------------------------------------------------------
+
+
+def main() -> None:
+    print_heading("Generating Synthetic Aduly Income Dataset")
+    x_train, x_test, y_train, y_test, preprocessor = prepare_data()
+    print_heading("Training Baseline Model")
+
+    baseline_model = train_baseline(x_train, y_train, preprocessor)
+
+    perform_cross_validation(baseline_model, x_train, y_train)
+
+    print_heading("Baseline Model Performance")
+
+    baseline_accuracy = evaluate_model(baseline_model, x_test, y_test)
+
+    print_heading("Hyperparameter Optimisation")
+
+    best_parameters = optimise_model(x_train, y_train, preprocessor)
+
+    print_heading("Training Fine Tuned Model")
+
+    tuned_model = train_fine_tuned(x_train, y_train, preprocessor, best_parameters)
+
+    print_heading("Fine-Tuned Model Performance")
+
+    tuned_accuracy = evaluate_model(tuned_model, x_test, y_test)
+
+    print_heading("Model Comparison")
+
+    improvement = tuned_accuracy - baseline_accuracy
+
+    print(f"Baseline Accuracy: {baseline_accuracy:.3f}")
+
+    print(f"Fine-Tuned Accuracy: {tuned_accuracy:.3f}")
+
+    print(f"Improvement: {improvement:.3f}")
+
+    print_heading("Generating visualisations")
+
+    plot_confusion_matrix(tuned_model, x_test, y_test)
+
+    plot_roc_curve(tuned_model, x_test, y_test)
+
+    plot_feature_importance(tuned_model)
+
+    compare_models(baseline_accuracy, tuned_accuracy)
+
+    print_heading("Saving Model")
+
+    save_model(tuned_model)
+
+    print_heading("Program Complete")
+
+    print("The optimised model has been successfully trained, evaluated and saved.")
+
+
+# -----------------------------------------------------------------------------
+# 4. Run the script
+# -----------------------------------------------------------------------------
+
+if __name__ == "__main__":
+    main()
