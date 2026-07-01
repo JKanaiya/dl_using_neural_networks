@@ -592,53 +592,29 @@ def main() -> None:
     print_heading("Generating Synthetic Aduly Income Dataset")
     x_train, x_test, y_train, y_test, preprocessor = prepare_data()
     print_heading("Training Baseline Model")
-
     baseline_model = train_baseline(x_train, y_train, preprocessor)
-
     perform_cross_validation(baseline_model, x_train, y_train)
-
     print_heading("Baseline Model Performance")
-
     baseline_accuracy = evaluate_model(baseline_model, x_test, y_test)
-
     print_heading("Hyperparameter Optimisation")
-
     best_parameters = optimise_model(x_train, y_train, preprocessor)
-
     print_heading("Training Fine Tuned Model")
-
     tuned_model = train_fine_tuned(x_train, y_train, preprocessor, best_parameters)
-
     print_heading("Fine-Tuned Model Performance")
-
     tuned_accuracy = evaluate_model(tuned_model, x_test, y_test)
-
     print_heading("Model Comparison")
-
     improvement = tuned_accuracy - baseline_accuracy
-
     print(f"Baseline Accuracy: {baseline_accuracy:.3f}")
-
     print(f"Fine-Tuned Accuracy: {tuned_accuracy:.3f}")
-
     print(f"Improvement: {improvement:.3f}")
-
     print_heading("Generating visualisations")
-
     plot_confusion_matrix(tuned_model, x_test, y_test)
-
     plot_roc_curve(tuned_model, x_test, y_test)
-
     plot_feature_importance(tuned_model)
-
     compare_models(baseline_accuracy, tuned_accuracy)
-
     print_heading("Saving Model")
-
     save_model(tuned_model)
-
     print_heading("Program Complete")
-
     print("The optimised model has been successfully trained, evaluated and saved.")
 
 
